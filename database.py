@@ -1,5 +1,6 @@
 import asyncpg
 import os
+import logging
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -10,19 +11,35 @@ class Database:
 
     async def connect(self):
         try:
-            self.pool = await asyncpg.create_pool(
-                user=os.getenv("DB_USER"),
-                password=os.getenv("DB_PASS"),
-                database=os.getenv("DB_NAME"),
-                host=os.getenv("DB_HOST"),
-                port=5432 
-            )
+            # 1. Renderda odatda DATABASE_URL bo'ladi, shuni tekshiramiz
+            db_url = os.getenv("DATABASE_URL")
+            
+            if db_url:
+                # URL orqali ulanish (Render uchun)
+                self.pool = await asyncpg.create_pool(db_url)
+            else:
+                # Agar URL bo'lmasa, alohida parametrlar bilan ulanish (Local uchun)
+                self.pool = await asyncpg.create_pool(
+                    user=os.getenv("DB_USER"),
+                    password=os.getenv("DB_PASS"),
+                    database=os.getenv("DB_NAME"),
+                    host=os.getenv("DB_HOST"),
+                    port=5432
+                )
             print("✅ Baza ulandi")
+            return True
         except Exception as e:
-            print(f"❌ Baza xatosi: {e}")
+            # Xatolikni to'liq chop etamiz
+            print(f"❌ Baza xatosi (Ulanishda): {e}")
+            logging.error(f"DB Connection Error: {e}")
+            return False
 
     async def create_tables(self):
-        # Users jadvali
+        # Agar pool bo'lmasa (ulanish o'xshamasligi), to'xtaymiz
+        if not self.pool:
+            print("⚠️ Baza ulanmagan, jadvallar yaratilmaydi!")
+            return
+
         users_sql = """
         CREATE TABLE IF NOT EXISTS users (
             id BIGINT PRIMARY KEY,
@@ -31,7 +48,6 @@ class Database:
             joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
         """
-        # Animes jadvali (Code, Name, Photo, Videos[])
         animes_sql = """
         CREATE TABLE IF NOT EXISTS animes (
             code VARCHAR(50) PRIMARY KEY,
@@ -40,20 +56,22 @@ class Database:
             file_ids TEXT[] 
         );
         """
-        async with self.pool.acquire() as connection:
-            await connection.execute(users_sql)
-            await connection.execute(animes_sql)
-            print("✅ Jadvallar tayyor")
+        try:
+            async with self.pool.acquire() as connection:
+                await connection.execute(users_sql)
+                await connection.execute(animes_sql)
+                print("✅ Jadvallar tayyor")
+        except Exception as e:
+            print(f"❌ Jadval yaratishda xatolik: {e}")
 
     async def add_user(self, user_id, full_name, username):
+        if not self.pool: return
         sql = "INSERT INTO users (id, full_name, username) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING"
         async with self.pool.acquire() as conn:
             await conn.execute(sql, user_id, full_name, username)
 
-    # --- ANIME FUNKSIYALARI ---
-
     async def add_anime(self, code, name, photo_id, file_ids):
-        """Animeni bazaga saqlash"""
+        if not self.pool: return False
         sql = "INSERT INTO animes (code, name, photo_id, file_ids) VALUES ($1, $2, $3, $4)"
         async with self.pool.acquire() as conn:
             try:
@@ -63,20 +81,19 @@ class Database:
                 return False
 
     async def get_anime(self, code):
-        """Kod bo'yicha anime olish"""
+        if not self.pool: return None
         sql = "SELECT * FROM animes WHERE code = $1"
         async with self.pool.acquire() as conn:
             return await conn.fetchrow(sql, code)
 
     async def delete_anime(self, code):
-        """Animeni o'chirish"""
+        if not self.pool: return "Error"
         sql = "DELETE FROM animes WHERE code = $1"
         async with self.pool.acquire() as conn:
-            result = await conn.execute(sql, code)
-            return result # "DELETE 1" kabi javob qaytadi
+            return await conn.execute(sql, code)
 
     async def get_all_animes(self):
-        """Barcha kodlarni olish (Admin uchun)"""
+        if not self.pool: return []
         sql = "SELECT code, name FROM animes ORDER BY code"
         async with self.pool.acquire() as conn:
             return await conn.fetch(sql)
