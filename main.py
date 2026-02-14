@@ -3,26 +3,16 @@ import logging
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 
-# -----------------------------------------------------------
-# ⚠️ НАЗАР АУДАР! Төмендегі тырнақшаның ішіне ТОКЕНДІ сал!
-# Мысалы: API_TOKEN = '123456789:AAGKZ...'
-# -----------------------------------------------------------
-
-API_TOKEN = '8233524201:AAHClVZ5uUKMK6oFAc1zNTyS6TGYWSGoKHU'
-
-# -----------------------------------------------------------
+# Сенің токенің (Видеодағы токенді осы жерге қайта жаз)
+API_TOKEN = '8233524201:AAHclVZS5uUkMK6OFac1zNtY56tGOWsGKhU'
 
 logging.basicConfig(level=logging.INFO)
 
-# Егер токен бос болса, қате шығармау үшін тексеру
-if API_TOKEN == '8233524201:AAHClVZ5uUKMK6oFAc1zNTyS6TGYWSGoKHU':
-    print("❌ ҚАТЕ: Сен бот токенін жазуды ұмыттың! main.py файлын ашып, API_TOKEN жеріне токенді қой.")
-    exit()
-
+# Ботты қосамыз
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
 
-# Сенің жаңа эмодзи ID-ің
+# Сенің эмодзи ID-ің
 EMOJI_ID = "5199785165735367039"
 
 @dp.message(Command("start"))
