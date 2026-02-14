@@ -3,16 +3,17 @@ import logging
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 
-# Сенің токенің (Видеодағы токенді осы жерге қайта жаз)
-API_TOKEN = '8233524201:AAHclVZS5uUkMK6OFac1zNtY56tGOWsGKhU'
+# -----------------------------------------------------------
+# ⚠️ ОСЫ ЖЕРГЕ ЖАҢА ТОКЕНДІ ҚОЮ КЕРЕК!
+# Ескі (8233...) токен енді жұмыс істемейді.
+# -----------------------------------------------------------
+API_TOKEN = '8535472292:AAEU19Fnw1VAKtaIzu4Cea9s5vsI7jvBqQw'
 
 logging.basicConfig(level=logging.INFO)
-
-# Ботты қосамыз
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
 
-# Сенің эмодзи ID-ің
+# Эмодзи ID
 EMOJI_ID = "5199785165735367039"
 
 @dp.message(Command("start"))
